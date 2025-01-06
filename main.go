@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xklaky35/welcomePageAPI/middleware"
 )
 
 type Config struct {
@@ -33,12 +33,21 @@ func main() {
 	
 
 	r := gin.Default()
+	r.Use(middleware.CORSMiddleware())
 
-	r.Handle(http.MethodGet, "/wPGC", getConfig)
-	r.Handle(http.MethodPost, "/wPUA", updateArt)
-	r.Handle(http.MethodPost, "/wPUC", updateCoding)
-	r.Handle(http.MethodPost, "/wPUM", updateMusic)
-	r.Handle(http.MethodPost, "/wPUJ", updateJapanese)
+	protectedRoutes := r.Group("/wP")
+
+	// Setup auth
+	protectedRoutes.Use(middleware.LoadValidUsers())
+	protectedRoutes.Use(middleware.AuthMiddleware())
+
+	{
+		protectedRoutes.GET("/GC", getConfig)
+		protectedRoutes.POST("/UA", updateArt)
+		protectedRoutes.POST("/UC", updateCoding)
+		protectedRoutes.POST("/UM", updateMusic)
+		protectedRoutes.POST("/UJ", updateJapanese)
+	}
 	
 	r.Run()
 }
@@ -51,7 +60,7 @@ func getConfig(c *gin.Context){
 		return
 	}
 
-	c.JSON(200, config)
+	c.JSON(200, &config)
 }
 func updateArt(c *gin.Context){
 	update("art")
@@ -68,17 +77,9 @@ func updateJapanese(c *gin.Context){
 
 
 func update(gauge string){
-	f, err := os.OpenFile("logs/log.log", 0, 766)
-	if err != nil{
-		fmt.Println("Log could not be opened")
-		return
-	}
-	l := log.New(f, "> ", 0)
-
-
 	config, err := loadConfig()
 	if err != nil {
-		l.Println(err)
+		log.Println(err)
 		return
 	}
 	
@@ -105,13 +106,13 @@ func update(gauge string){
 
 	d, err := json.Marshal(&config)
 	if err != nil {
-		l.Println(err)
+		log.Println(err)
 		return
 	}
 	
-	err = os.WriteFile("data/config.json", d, 766)
+	err = os.WriteFile(os.Getenv("wP_CONFIG"), d, 766)
 	if err != nil{
-		l.Println(err)
+		log.Println(err)
 	}
 }
 
@@ -119,7 +120,7 @@ func update(gauge string){
 
 func loadConfig() (Config, error){
 	var config Config  
-	f, err := os.ReadFile("data/config.json")
+	f, err := os.ReadFile(os.Getenv("wP_CONFIG"))
 	if err != nil {
 		return config, err
 	}
