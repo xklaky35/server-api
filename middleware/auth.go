@@ -4,17 +4,12 @@ import (
 	"errors"
 	"net/http"
 	"os"
-
 	"github.com/gin-gonic/gin"
 )
-
-var private_key = []byte(os.Getenv("welcomePageSecret"))
 
 
 func AuthMiddleware() gin.HandlerFunc{
 	return func(c *gin.Context){
-
-
 		if err := validate(c); err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
 			c.Abort()
@@ -25,10 +20,10 @@ func AuthMiddleware() gin.HandlerFunc{
 }
 
 func LoadValidUsers() gin.HandlerFunc{
+
 	return gin.BasicAuth(gin.Accounts{
-			"leon":string(private_key),
-		})
-	
+		os.Getenv("welcomePageUser"):os.Getenv("welcomePageSecret"),
+	})
 }
 
 func validate(c *gin.Context) error{
