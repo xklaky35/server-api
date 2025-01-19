@@ -14,8 +14,5 @@ ENV PORT=8080
 EXPOSE 8080
 
 COPY data/config.json /data/
-ENV wP_CONFIG="/data/config.json"
-
-ENV welcomePageSecret=<my-password>
 
 CMD ["/bin/welcomePageAPI"]
