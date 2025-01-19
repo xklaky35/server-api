@@ -1,5 +1,3 @@
-name: welcomePageAPI
-
 services:
   api:
     image: xklaky35/welcome_page_api
