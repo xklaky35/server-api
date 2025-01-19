@@ -1,1 +1,1 @@
-{"gauges":{"max_value":10,"min_value":0,"increase_step":1,"decrease_step":2,"gauges":[{"name":"Art","value":10,"last_increase":"2025-01-19T16:50:22+01:00"}]}}
+{"gauges":{"max_value":10,"min_value":0,"increase_step":1,"decrease_step":2,"gauges":[{"name":"Art","value":8,"last_increase":"2025-01-12T16:50:22+01:00"},{"name":"Coding","value":0,"last_increase":"2025-01-17T17:33:32Z"}]}}
