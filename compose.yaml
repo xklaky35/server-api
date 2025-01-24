@@ -3,13 +3,18 @@ name: welcomePageAPI
 services:
   api:
     image: xklaky35/welcome_page_api
-    build: ./
+    build: ./api
     ports:
       - 7878:8080
     volumes:
+      - ./config.json:/config.json
+      - ./.env:/.env
       - type: bind
-        source: ./.env
-        target: /.env
-      - type: bind
-        source: ./data/config.json
-        target: /data/config.json
+        source: ./api/data/data.json
+        target: /data/data.json
+  updater:
+    image: xklaky35/api_updater
+    build: ./api_updater
+    volumes:
+      - ./config.json:/config.json
+      - ./.env:/.env

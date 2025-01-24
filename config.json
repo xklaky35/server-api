@@ -1,0 +1,6 @@
+{
+	"max_value":10,
+	"min_value":1,
+	"increase_step":1,
+	"decrease_step":2
+}

@@ -17,14 +17,13 @@ import (
 const TIME_FORMAT string = time.RFC3339
 
 type Config struct {
-	Gauges gauges `json:"gauges"`
-}
-
-type gauges struct {
 	MaxValue int `json:"max_value"`
 	MinValue int `json:"min_value"`
 	IncreaseStep int `json:"increase_step"`
 	DecreaseStep int `json:"decrease_step"`
+}
+
+type Data struct {
 	Gauges []gauge `json:"gauges"`
 }
 
@@ -37,6 +36,7 @@ type gauge struct {
 func main() {
 	
 	err := godotenv.Load()
+
 	if err != nil {
 		log.Fatal("Error reading .env file")
 	}
@@ -51,17 +51,37 @@ func main() {
 	protectedRoutes.Use(middleware.AuthMiddleware())
 
 	{
-		protectedRoutes.GET("/GetConfig", getConfig)
+		protectedRoutes.GET("/GetData", getData)
 		protectedRoutes.POST("/UpdateGauge", update)
 		protectedRoutes.POST("/AddGauge", addGauge)
 		protectedRoutes.POST("/RemoveGauge", removeGauge)
+		protectedRoutes.POST("/DailyCycle", dailyCycle)
 	}
 	
 	r.Run()
 }
 
-func removeGauge(c *gin.Context){
+
+func dailyCycle(c *gin.Context){
+	data, err := loadData()
+	if err != nil {
+		log.Fatal()
+	}
 	config, err := loadConfig()
+	if err != nil {
+		log.Fatal()
+	}
+
+	for _, e := range data.Gauges {
+		if !isToday(e.LastIncrease){
+			e.Value -= config.DecreaseStep
+		}
+	}
+	writeData(&data)
+}
+
+func removeGauge(c *gin.Context){
+	data, err := loadData()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -69,18 +89,18 @@ func removeGauge(c *gin.Context){
 
 	name := c.PostForm("name")
 
-	if i, exists := findGauge(config.Gauges.Gauges, name); exists == true{
-		copy(config.Gauges.Gauges[i:], config.Gauges.Gauges[i+1:])
-		config.Gauges.Gauges[len(config.Gauges.Gauges)-1] = gauge{}
-		config.Gauges.Gauges = config.Gauges.Gauges[:len(config.Gauges.Gauges)-1]
+	if i, exists := findGauge(data.Gauges, name); exists == true{
+		copy(data.Gauges[i:], data.Gauges[i+1:])
+		data.Gauges[len(data.Gauges)-1] = gauge{}
+		data.Gauges = data.Gauges[:len(data.Gauges)-1]
 	} else {
 		c.AbortWithStatus(404)		
 	}
-	writeConfig(&config)
+	writeData(&data)
 }
 
 func addGauge(c *gin.Context){
-	config, err := loadConfig()
+	data, err := loadData()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -88,33 +108,32 @@ func addGauge(c *gin.Context){
 
 	name := c.PostForm("name")
 
-	if _, exists := findGauge(config.Gauges.Gauges, name); exists == true{
+	if _, exists := findGauge(data.Gauges, name); exists == true{
 		c.AbortWithStatus(404)		
 	} else {
-		config.Gauges.Gauges = append(config.Gauges.Gauges, gauge{
+		data.Gauges = append(data.Gauges, gauge{
 			Name: name,
 			Value: 0,
 			LastIncrease: time.Now().Local().Format(TIME_FORMAT),
 		})
 	}
 
-	writeConfig(&config)
-
+	writeData(&data)
 }
 
-func getConfig(c *gin.Context){
+func getData(c *gin.Context){
 
-	config, err := loadConfig()
+	data, err := loadData()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	c.JSON(200, &config)
+	c.JSON(200, &data)
 }
 
 func update(c *gin.Context){
-	config, err := loadConfig()
+	data, err := loadData()
 	if err != nil {
 		log.Println(err)
 		return
@@ -123,15 +142,15 @@ func update(c *gin.Context){
 	name := c.Query("name")
 
 	// search for the gauge and increase it if found
-	if i, exists := findGauge(config.Gauges.Gauges, name); exists == true{
-		err := increase(&config.Gauges.Gauges[i], config)
+	if i, exists := findGauge(data.Gauges, name); exists == true{
+		err := increase(&data.Gauges[i])
 		if err != nil {
 			c.AbortWithStatus(401)
 		}
 	} else {
 		c.AbortWithStatus(404)		
 	}
-	writeConfig(&config)
+	writeData(&data)
 }
 
 
@@ -145,17 +164,23 @@ func findGauge(g []gauge, name string) (int,bool){
 	return 0, false
 }
 
-func increase(g *gauge, c Config) error {
+func increase(g *gauge) error {
+
+	config, err := loadConfig()
+	if err != nil{
+		log.Fatal()
+	}
+
 	if isToday(g.LastIncrease){
 		return errors.New("Forbidden")
 	}
 
 	g.LastIncrease = time.Now().Local().Format(TIME_FORMAT)
 
-	if g.Value == c.Gauges.MaxValue{
+	if g.Value == config.MaxValue{
 		return nil
 	}
-	g.Value += c.Gauges.IncreaseStep 
+	g.Value += config.IncreaseStep 
 	return nil
 }
 
@@ -171,22 +196,34 @@ func isToday(date string) bool{
 	return true
 }
 
-func writeConfig(c *Config){
+func writeData(d *Data){
 
-	d, err := json.Marshal(c)
+	data, err := json.Marshal(d)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	
-	err = os.WriteFile(os.Getenv("wP_CONFIG"), d, 766)
+	err = os.WriteFile(os.Getenv("wP_DATA"), data, 766)
 	if err != nil{
 		log.Println(err)
 	}
 }
 
+func loadData() (Data, error){
+	var data Data  
+	f, err := os.ReadFile(os.Getenv("wP_DATA"))
+	if err != nil {
+		return data, err
+	}
+		
+	err = json.Unmarshal(f, &data)
+
+	return data, nil
+}
+
 func loadConfig() (Config, error){
-	var config Config  
+	var config Config 
 	f, err := os.ReadFile(os.Getenv("wP_CONFIG"))
 	if err != nil {
 		return config, err

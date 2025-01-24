@@ -13,6 +13,6 @@ COPY --from=build /bin/welcomePageAPI /bin/welcomePageAPI
 ENV PORT=8080
 EXPOSE 8080
 
-COPY data/config.json /data/
+COPY data/data.json /data/data.json
 
 CMD ["/bin/welcomePageAPI"]
