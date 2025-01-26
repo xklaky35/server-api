@@ -72,9 +72,13 @@ func dailyCycle(c *gin.Context){
 		log.Fatal()
 	}
 
-	for _, e := range data.Gauges {
-		if !isToday(e.LastIncrease){
-			e.Value -= config.DecreaseStep
+	for i, e := range data.Gauges {
+		if isToday(e.LastIncrease) {
+			continue
+		}
+		data.Gauges[i].Value -= config.DecreaseStep
+		if data.Gauges[i].Value < 0 {
+			data.Gauges[i].Value = 0
 		}
 	}
 	writeData(&data)
