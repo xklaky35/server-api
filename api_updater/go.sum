@@ -1,2 +1,4 @@
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
 github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
+github.com/xklaky35/wpFileReader v0.0.0-20250127215739-d669d7786f60 h1:bjJNQ27c1YB/GR2Nv1Yij3QjhktJEKHgbMYOhFM9rf0=
+github.com/xklaky35/wpFileReader v0.0.0-20250127215739-d669d7786f60/go.mod h1:6i7DN6aiSpEsrV3faZTot5USdshcVG9H8zdn5eyheWw=

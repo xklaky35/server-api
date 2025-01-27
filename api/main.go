@@ -1,46 +1,29 @@
 package main
 
+import "github.com/xklaky35/welcomePageAPI/middleware"
+
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/xklaky35/welcomePageAPI/middleware"
+	"github.com/xklaky35/wpFileReader"
 )
 
 
 const TIME_FORMAT string = time.RFC3339
 
-type Config struct {
-	MaxValue int `json:"max_value"`
-	MinValue int `json:"min_value"`
-	IncreaseStep int `json:"increase_step"`
-	DecreaseStep int `json:"decrease_step"`
-}
 
-type Data struct {
-	Gauges []gauge `json:"gauges"`
-}
-
-type gauge struct {
-	Name string `json:"name"`
-	Value int `json:"value"`
-	LastIncrease string `json:"last_increase"`
-}
+var config filereader.Config
 
 func main() {
+	initData()
 	
-	err := godotenv.Load()
-
-	if err != nil {
-		log.Fatal("Error reading .env file")
-	}
-
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 
@@ -62,14 +45,31 @@ func main() {
 }
 
 
-func dailyCycle(c *gin.Context){
-	data, err := loadData()
+func initData() (bool, error) {
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatal()
+		return false, err
 	}
-	config, err := loadConfig()
+
+	config, err = filereader.LoadConfig()
 	if err != nil {
-		log.Fatal()
+		return false, err
+	}
+
+	f, err := os.OpenFile("./logs.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	log.SetOutput(f)
+
+	return true, nil
+}
+
+
+func dailyCycle(c *gin.Context){
+	data, err := filereader.LoadData()
+	if err != nil {
+		log.Print()
 	}
 
 	for i, e := range data.Gauges {
@@ -81,11 +81,11 @@ func dailyCycle(c *gin.Context){
 			data.Gauges[i].Value = 0
 		}
 	}
-	writeData(&data)
+	filereader.WriteData(&data)
 }
 
 func removeGauge(c *gin.Context){
-	data, err := loadData()
+	data, err := filereader.LoadData()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -95,16 +95,21 @@ func removeGauge(c *gin.Context){
 
 	if i, exists := findGauge(data.Gauges, name); exists == true{
 		copy(data.Gauges[i:], data.Gauges[i+1:])
-		data.Gauges[len(data.Gauges)-1] = gauge{}
+		data.Gauges[len(data.Gauges)-1] = filereader.Gauge{}
 		data.Gauges = data.Gauges[:len(data.Gauges)-1]
 	} else {
 		c.AbortWithStatus(404)		
 	}
-	writeData(&data)
+	filereader.WriteData(&data)
 }
 
 func addGauge(c *gin.Context){
-	data, err := loadData()
+	data, err := filereader.LoadData()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	loc, err := time.LoadLocation(config.Timezone)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -115,19 +120,18 @@ func addGauge(c *gin.Context){
 	if _, exists := findGauge(data.Gauges, name); exists == true{
 		c.AbortWithStatus(404)		
 	} else {
-		data.Gauges = append(data.Gauges, gauge{
+		data.Gauges = append(data.Gauges, filereader.Gauge{
 			Name: name,
 			Value: 0,
-			LastIncrease: time.Now().Local().Format(TIME_FORMAT),
+			LastIncrease: time.Now().In(loc).Format(TIME_FORMAT),
 		})
 	}
 
-	writeData(&data)
+	filereader.WriteData(&data)
 }
 
 func getData(c *gin.Context){
-
-	data, err := loadData()
+	data, err := filereader.LoadData()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -137,7 +141,7 @@ func getData(c *gin.Context){
 }
 
 func update(c *gin.Context){
-	data, err := loadData()
+	data, err := filereader.LoadData()
 	if err != nil {
 		log.Println(err)
 		return
@@ -154,12 +158,10 @@ func update(c *gin.Context){
 	} else {
 		c.AbortWithStatus(404)		
 	}
-	writeData(&data)
+	filereader.WriteData(&data)
 }
 
-
-
-func findGauge(g []gauge, name string) (int,bool){
+func findGauge(g []filereader.Gauge, name string) (int,bool){
 	for i, e := range g {
 		if e.Name == name {
 			return i, true
@@ -168,18 +170,18 @@ func findGauge(g []gauge, name string) (int,bool){
 	return 0, false
 }
 
-func increase(g *gauge) error {
-
-	config, err := loadConfig()
-	if err != nil{
-		log.Fatal()
+func increase(g *filereader.Gauge) error {
+	loc, err := time.LoadLocation(config.Timezone)
+	if err != nil {
+		return err
 	}
+
 
 	if isToday(g.LastIncrease){
 		return errors.New("Forbidden")
 	}
 
-	g.LastIncrease = time.Now().Local().Format(TIME_FORMAT)
+	g.LastIncrease = time.Now().In(loc).Format(TIME_FORMAT)
 
 	if g.Value == config.MaxValue{
 		return nil
@@ -191,50 +193,16 @@ func increase(g *gauge) error {
 func isToday(date string) bool{
 	t, err := time.Parse(TIME_FORMAT,date)		
 	if err != nil {
-		log.Fatal(err)	
+		log.Print(err)	
+	}
+	loc, err := time.LoadLocation(config.Timezone)
+	if err != nil {
+		log.Print(err)
 	}
 
-	if t.Day() != time.Now().Day(){
+	if t.Day() != time.Now().In(loc).Day(){
 		return false
 	}
 	return true
-}
-
-func writeData(d *Data){
-
-	data, err := json.Marshal(d)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	
-	err = os.WriteFile(os.Getenv("wP_DATA"), data, 766)
-	if err != nil{
-		log.Println(err)
-	}
-}
-
-func loadData() (Data, error){
-	var data Data  
-	f, err := os.ReadFile(os.Getenv("wP_DATA"))
-	if err != nil {
-		return data, err
-	}
-		
-	err = json.Unmarshal(f, &data)
-
-	return data, nil
-}
-
-func loadConfig() (Config, error){
-	var config Config 
-	f, err := os.ReadFile(os.Getenv("wP_CONFIG"))
-	if err != nil {
-		return config, err
-	}
-		
-	err = json.Unmarshal(f, &config)
-
-	return config, nil
 }
 
