@@ -37,7 +37,9 @@ const TIME_FORMAT string = time.RFC3339
 var config filereader.Config
 
 func main() {
-	initData()
+	if err := initData(); err != nil {
+		return
+	}
 	
 	r := gin.Default()
 	r.Use(middleware.RateLimiter())
@@ -62,15 +64,15 @@ func main() {
 }
 
 
-func initData() (bool, error) {
+func initData() error {
 	err := godotenv.Load()
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	config, err = filereader.LoadConfig()
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	f, err := os.OpenFile("/logs/logs.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
@@ -79,7 +81,7 @@ func initData() (bool, error) {
 	}
 	log.SetOutput(f)
 
-	return true, nil
+	return nil
 }
 
 func getData(c *gin.Context){
