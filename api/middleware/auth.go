@@ -1,16 +1,18 @@
 package middleware
 
 import (
-	"errors"
+	"log"
 	"net/http"
 	"os"
+
 	"github.com/gin-gonic/gin"
 )
 
 
 func AuthMiddleware() gin.HandlerFunc{
 	return func(c *gin.Context){
-		if err := validate(c); err != nil {
+		if err := validate(c); err == false {
+			log.Print(c.Request)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
 			c.Abort()
 			return
@@ -26,12 +28,12 @@ func LoadValidUsers() gin.HandlerFunc{
 	})
 }
 
-func validate(c *gin.Context) error{
+func validate(c *gin.Context) bool {
 
-	_, err := c.Get(gin.AuthUserKey)
-	if err == false {
-		return errors.New("Wrong auth")
+	_, exists := c.Get(gin.AuthUserKey)
+	if exists == false {
+		return exists 
 	}
 
-	return nil
+	return true
 }

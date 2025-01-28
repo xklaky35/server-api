@@ -10,6 +10,9 @@ services:
       - type: bind
         source: ./api/data/data.json
         target: /data/data.json
+      - type: bind
+        source: ./api/logs/logs.log
+        target: /logs/logs.log
   updater:
     image: xklaky35/api_updater
     build: ./api_updater

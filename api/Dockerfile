@@ -8,7 +8,7 @@ RUN go mod download
 COPY . ./
 RUN go build -o /bin/welcomePageAPI /src/
 
-FROM scratch
+FROM alpine:latest
 COPY --from=build /bin/welcomePageAPI /bin/welcomePageAPI 
 
 ENV PORT=8080
