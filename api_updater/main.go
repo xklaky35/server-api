@@ -36,6 +36,13 @@ func main(){
 			if err != nil {
 				log.Print(err)
 			}
+			
+			// wait for the next day so the enpoint is called once
+			for {
+				if time.Now().In(loc).Hour() == 0  {
+					break
+				}
+			}
 		}
 	}
 }
