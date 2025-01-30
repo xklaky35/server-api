@@ -39,7 +39,7 @@ func main(){
 			
 			// wait for the next day so the enpoint is called once
 			for {
-				if time.Now().In(loc).Hour() == 0  {
+				if time.Now().In(loc).Hour() == 0 && time.Now().In(loc).Minute() == 0{
 					break
 				}
 			}

@@ -19,7 +19,7 @@ import (
 )
 
 type gauge struct {
-	Name string `json:"name"`
+	Name string `form:"name" json:"name"`
 }
 
 func (gauge *gauge) Validate() bool {
@@ -137,12 +137,14 @@ func addGauge(c *gin.Context){
 	}
 
 	var reqGauge gauge
-	if err := c.ShouldBindBodyWithJSON(&reqGauge); err != nil {
+	if err := c.ShouldBind(&reqGauge); err != nil {
+		fmt.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	if !reqGauge.Validate(){
+		fmt.Println("val err")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -169,7 +171,7 @@ func removeGauge(c *gin.Context){
 	}
 
 	var reqGauge gauge
-	if err := c.ShouldBindBodyWithJSON(&reqGauge); err != nil {
+	if err := c.ShouldBind(&reqGauge); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
