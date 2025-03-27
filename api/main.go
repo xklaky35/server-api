@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xklaky35/wpFileReader"
+	"github.com/xklaky35/welcome-page-api"
 )
 
 var config filereader.Config
@@ -21,15 +22,9 @@ func main() {
 	protectedRoutes.Use(middleware.LoadValidUsers())
 	protectedRoutes.Use(middleware.AuthMiddleware())
 
+	welcomepageapi.Init(protectedRoutes)
 
-	{
-		protectedRoutes.GET("/GetData", getData)
-		protectedRoutes.POST("/UpdateGauge", update) //param
-		protectedRoutes.POST("/AddGauge", addGauge) //body
-		protectedRoutes.POST("/RemoveGauge", removeGauge) //body
-		protectedRoutes.POST("/DailyCycle", dailyCycle)
-	}
-	
+
 	r.Run()
 }
 
