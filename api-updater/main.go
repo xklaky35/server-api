@@ -19,7 +19,7 @@ func main(){
 		log.Fatal(err)
 	}
 
-	config, err = filereader.LoadConfig()
+	config, err = filereader.LoadConfig("/config.json")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,16 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/xklaky35/welcomePageAPI/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xklaky35/wpFileReader"
+	"github.com/joho/godotenv"
 	"github.com/xklaky35/welcome-page-api"
 )
 
-var config filereader.Config
-
 func main() {
+	err := godotenv.Load()
+	if err != nil{
+		fmt.Println(err)
+		return
+	}
 	
 	r := gin.Default()
 	r.Use(middleware.RateLimiter())
@@ -22,10 +28,13 @@ func main() {
 	protectedRoutes.Use(middleware.LoadValidUsers())
 	protectedRoutes.Use(middleware.AuthMiddleware())
 
-	welcomepageapi.Init(protectedRoutes)
+	err = welcomepageapi.Init(protectedRoutes)
+	if err != nil{
+		fmt.Println(err)
+		return
+	}
 
-
-	r.Run()
+	r.Run(os.Getenv("PORT"))
 }
 
 

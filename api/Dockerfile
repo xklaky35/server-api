@@ -1,4 +1,4 @@
-FROM golang:1.23.4-alpine as build
+FROM golang:alpine as build
 WORKDIR /src
 
 
@@ -11,9 +11,9 @@ RUN go build -o /bin/server-api /src/
 FROM alpine:latest
 COPY --from=build /bin/server-api /bin/server-api 
 
-ENV PORT=8080
-EXPOSE 8080
+ENV PORT=:3000
+EXPOSE 3000
 
-COPY data/data.json /data/data.json
+#COPY ./data/data.json /welcome-page-api/data.json
 
 CMD ["/bin/server-api"]

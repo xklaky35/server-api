@@ -24,7 +24,7 @@ func AuthMiddleware() gin.HandlerFunc{
 func LoadValidUsers() gin.HandlerFunc{
 
 	return gin.BasicAuth(gin.Accounts{
-		os.Getenv("welcomePageUser"):os.Getenv("welcomePageSecret"),
+		os.Getenv("apiUser"):os.Getenv("apiSecret"),
 	})
 }
 

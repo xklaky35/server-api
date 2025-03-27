@@ -1,21 +1,21 @@
 services:
   api:
-    image: xklaky35/welcome_page_api
+    image: xklaky35/server-api
     build: ./api
     ports:
-      - 7878:8080
+      - 7878:3000
     volumes:
-      - ./config.json:/config.json
-      - ./.env:/.env
+      - ./welcome-page-api/config.json:/welcome-page-api/config.json
+      - ./api/.env:/.env
       - type: bind
-        source: ./api/data/data.json
-        target: /data/data.json
+        source: ./welcome-page-api/data.json
+        target: /welcome-page-api/data.json
       - type: bind
-        source: ./api/logs/logs.log
-        target: /logs/logs.log
+        source: ./welcome-page-api/logs.log
+        target: /welcome-page-api/logs.log
   updater:
-    image: xklaky35/api_updater
-    build: ./api_updater
+    image: xklaky35/api-updater
+    build: ./api-updater
     volumes:
-      - ./config.json:/config.json
-      - ./.env:/.env
+      - ./welcome-page-api/config.json:/config.json
+      - ./api/.env:/.env
