@@ -19,7 +19,7 @@ func main(){
 		log.Fatal(err)
 	}
 
-	config, err = filereader.LoadConfig("/config.json")
+	config, err := filereader.LoadConfig("/config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,14 +29,16 @@ func main(){
 		log.Fatal(err)
 	}
 
+
+	// giga scuffed but hey...
 	for {
-		// call at midnight
+		//call at midnight
 		if time.Now().In(loc).Hour() == 23 && time.Now().In(loc).Minute() == 59 {
 			err := callEndpoint()
 			if err != nil {
 				log.Print(err)
 			}
-			
+
 			// wait for the next day so the enpoint is called once
 			for {
 				if time.Now().In(loc).Hour() == 0 && time.Now().In(loc).Minute() == 0{
@@ -44,6 +46,7 @@ func main(){
 				}
 			}
 		}
+		time.Sleep(1 * time.Second) // cpu can chill
 	}
 }
 
