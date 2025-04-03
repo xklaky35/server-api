@@ -11,9 +11,9 @@ RUN go build -o /bin/server-api /src/
 FROM alpine:latest
 COPY --from=build /bin/server-api /bin/server-api 
 
+COPY ./.env ./
+
 ENV PORT=:3000
 EXPOSE 3000
-
-#COPY ./data/data.json /welcome-page-api/data.json
 
 CMD ["/bin/server-api"]
