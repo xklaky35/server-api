@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/xklaky35/welcomePageAPI/middleware"
 
@@ -28,31 +29,31 @@ func main() {
 
 	// Redirection of welcomePageAPI URLs
 	r.GET("/wP/:endpoint", func(ctx *gin.Context) {
-		redirectURL := fmt.Sprintf("http://localhost:3001/%s", ctx.Param("endpoint"))
+		redirectURL := fmt.Sprintf("http://localhost:3001/%s", strings.Replace(ctx.Request.URL.String(), "/wP/", "", -1))
 		ctx.Redirect(http.StatusPermanentRedirect, redirectURL)
 	} )
 	r.POST("/wP/:endpoint", func(ctx *gin.Context) {
-		redirectURL := fmt.Sprintf("http://localhost:3001/%s", ctx.Param("endpoint"))
+		redirectURL := fmt.Sprintf("http://localhost:3001/%s", strings.Replace(ctx.Request.URL.String(), "/wP/", "", -1))
 		ctx.Redirect(http.StatusPermanentRedirect, redirectURL)
 	} )
 
 	// Redirection of speed URLs
 	r.GET("/speed/:endpoint", func(ctx *gin.Context) {
-		redirectURL := fmt.Sprintf("http://localhost:3002/%s", ctx.Param("endpoint"))
+		redirectURL := fmt.Sprintf("http://localhost:3002/%s", strings.Replace(ctx.Request.URL.String(), "/speed/", "", -1))
 		ctx.Redirect(http.StatusPermanentRedirect, redirectURL)
 	} )
 	r.POST("/speed/:endpoint", func(ctx *gin.Context) {
-		redirectURL := fmt.Sprintf("http://localhost:3002/%s", ctx.Param("endpoint"))
+		redirectURL := fmt.Sprintf("http://localhost:3002/%s", strings.Replace(ctx.Request.URL.String(), "/speed/", "", -1))
 		ctx.Redirect(http.StatusPermanentRedirect, redirectURL)
 	} )
 
 	// Redirection of speed URLs
 	r.GET("/p2g/:endpoint", func(ctx *gin.Context) {
-		redirectURL := fmt.Sprintf("http://localhost:3003/%s", ctx.Param("endpoint"))
+		redirectURL := fmt.Sprintf("http://localhost:3003/%s", strings.Replace(ctx.Request.URL.String(), "/p2g/", "", -1))
 		ctx.Redirect(http.StatusPermanentRedirect, redirectURL)
 	})
 	r.POST("/p2g/:endpoint", func(ctx *gin.Context) {
-		redirectURL := fmt.Sprintf("http://localhost:3003/%s", ctx.Param("endpoint"))
+		redirectURL := fmt.Sprintf("http://localhost:3003/%s", strings.Replace(ctx.Request.URL.String(), "/p2g/", "", -1))
 		ctx.Redirect(http.StatusPermanentRedirect, redirectURL)
 	})
 	
