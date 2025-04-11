@@ -12,7 +12,7 @@ import (
 func AuthMiddleware() gin.HandlerFunc{
 	return func(c *gin.Context){
 		if err := validate(c); err == false {
-			log.Print(c.Request)
+			log.Println(c.Request)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
 			c.Abort()
 			return

@@ -1,8 +1,8 @@
 package main
 
 /* -------------------------------------------------------------------
-This component is a interface to other internal services so 
-they dont have to be exposed. 
+This component is a interface to other internal services so
+they dont have to be exposed.
 If you want to use their enpoints your request needs to be validated
 first before the request is redirected internaly
 ----------------------------------------------------------------------*/
@@ -10,6 +10,7 @@ first before the request is redirected internaly
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -20,12 +21,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const LOG_PATH string = "/local/logs.log"
+
 func main() {
 	err := godotenv.Load()
 	if err != nil{
 		fmt.Println(err)
 		return
 	}
+
+	Init()
 	
 	r := gin.Default()
 	r.Use(middleware.RateLimiter())
@@ -35,11 +40,31 @@ func main() {
 	r.Use(middleware.LoadValidUsers())
 	r.Use(middleware.AuthMiddleware())
 
+	setupEndponts(r)
+
+
+}
+
+func Init() bool {
+	// setup logger
+	fmt.Println("Setting up log file...")
+    f, err := os.OpenFile(LOG_PATH, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)  
+    if err != nil {  
+        fmt.Println(err)  
+        return false  
+    }                        
+    defer f.Close()  
+    log.SetOutput(f)
+
+	return true
+}
+
+func setupEndponts(r *gin.Engine) {
 	// Redirection of welcomePageAPI URLs
 	r.GET("/wP/:endpoint", func(ctx *gin.Context) {
 		redirectURL := fmt.Sprintf("http://welcomepageapi:3001/%s", strings.Replace(ctx.Request.URL.String(), "/wP/", "", -1))
 		data, code := RedirectGetRequest(ctx, redirectURL)
-		if err != nil {
+		if code != http.StatusOK {
 			ctx.AbortWithStatus(code)
 		} 
 		ctx.Data(http.StatusOK, "application/json", data)
@@ -56,7 +81,7 @@ func main() {
 	r.GET("/speed/:endpoint", func(ctx *gin.Context) {
 		redirectURL := fmt.Sprintf("http://welcomepageapi:3002/%s", strings.Replace(ctx.Request.URL.String(), "/speed/", "", -1))
 		data, code := RedirectGetRequest(ctx, redirectURL)
-		if err != nil {
+		if code != http.StatusOK {
 			ctx.AbortWithStatus(code)
 		} 
 		ctx.Data(http.StatusOK, "application/json", data)
@@ -73,7 +98,7 @@ func main() {
 	r.GET("/p2g/:endpoint", func(ctx *gin.Context) {
 		redirectURL := fmt.Sprintf("http://welcomepageapi:3003/%s", strings.Replace(ctx.Request.URL.String(), "/p2g/", "", -1))
 		data, code := RedirectGetRequest(ctx, redirectURL)
-		if err != nil {
+		if code != http.StatusOK {
 			ctx.AbortWithStatus(code)
 		} 
 		ctx.Data(http.StatusOK, "application/json", data)
@@ -112,7 +137,6 @@ func RedirectGetRequest(ctx *gin.Context, url string) ([]byte,int) {
 }
 
 func RedirectPostRequest(ctx *gin.Context, url string) int {
-
 	var client http.Client
 
 	// build request

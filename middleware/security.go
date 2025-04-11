@@ -22,7 +22,7 @@ func HeaderSetup() gin.HandlerFunc {
 		c.Header("X-Content-Type-Options", "nosniff")
 
 		if c.Request.Method == "OPTIONS" {
-			log.Print(c.Request)
+			log.Println(c.Request)
 			c.AbortWithStatus(204)
 			return
 		}
@@ -35,7 +35,7 @@ func RateLimiter() gin.HandlerFunc {
 		limit := rate.NewLimiter(1,2)
 
 		if !limit.Allow() {
-			log.Print(c.Request)
+			log.Println(c.Request)
 			c.AbortWithStatus(http.StatusTooManyRequests)
 			return
 		}
